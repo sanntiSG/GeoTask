@@ -1,0 +1,39 @@
+{
+  "name": "GeoTask",
+  "short_name": "GeoTask",
+  "description": "Recordatorios inteligentes por geolocalización",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Nueva tarea",
+      "short_name": "Nueva tarea",
+      "url": "/tasks/new",
+      "icons": [{ "src": "/icons/shortcut-task.png", "sizes": "96x96" }]
+    }
+  ]
+}
