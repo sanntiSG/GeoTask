@@ -25,10 +25,33 @@ A full-stack location-based task manager built with Next.js 16, React 19, SQLite
 
 ```bash
 npm install
+cp .env.example .env.local   # optional — app works with defaults, no key needed
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+## Environment Variables
+
+All variables have safe defaults. The app starts with **no configuration** using free OpenStreetMap tiles.
+
+Copy `.env.example` → `.env.local` and edit only the values you want to override. After any change restart `npm run dev`.
+
+| Variable | Default | Description |
+|---|---|---|
+| `DATABASE_PATH` | `data/geotask.db` | SQLite file path (relative to project root) |
+| `NEXT_PUBLIC_MAP_TILE_URL` | OSM tiles | Tile URL template `{z}/{x}/{y}` |
+| `NEXT_PUBLIC_MAP_ATTRIBUTION` | OSM attribution | HTML attribution string shown on the map |
+| `NEXT_PUBLIC_DEFAULT_LAT` | `-34.603` | Initial map center latitude |
+| `NEXT_PUBLIC_DEFAULT_LNG` | `-58.381` | Initial map center longitude |
+| `NEXT_PUBLIC_DEFAULT_ZOOM` | `12` | Initial map zoom level |
+
+### Using a commercial map provider
+
+Uncomment one of the provider examples in `.env.local` and paste your API key. No code changes needed.
+
+- **MapTiler** — sign up at [maptiler.com](https://www.maptiler.com), copy your key.
+- **Stadia Maps** — sign up at [stadiamaps.com](https://stadiamaps.com), copy your API key.
 
 ## Permissions
 

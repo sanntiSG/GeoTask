@@ -2,10 +2,16 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-const dataDir = path.join(process.cwd(), 'data');
+// DATABASE_PATH can be set in .env.local (relative to project root).
+// Defaults to data/geotask.db.
+// turbopackIgnore tells Turbopack not to trace beyond the data/ subfolder.
+const dbRelPath = process.env.DATABASE_PATH || 'data/geotask.db';
+const dbPath = path.join(/* turbopackIgnore: true */ process.cwd(), dbRelPath);
+
+const dataDir = path.dirname(dbPath);
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
-const db = new Database(path.join(dataDir, 'geotask.db'));
+const db = new Database(dbPath);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS tasks (

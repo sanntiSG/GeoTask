@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaf
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Task, Priority } from '@/lib/types';
+import { MAP_TILE_URL, MAP_ATTRIBUTION, DEFAULT_CENTER, DEFAULT_ZOOM_LEVEL } from '@/lib/mapConfig';
 
 // Fix default marker icon paths broken by bundlers
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
@@ -51,15 +52,12 @@ interface Props {
 export default function MapView({ tasks, pendingCoords, onMapClick, onTaskClick }: Props) {
   return (
     <MapContainer
-      center={[-34.603, -58.381]}
-      zoom={12}
+      center={DEFAULT_CENTER}
+      zoom={DEFAULT_ZOOM_LEVEL}
       className="h-full w-full rounded-xl"
       style={{ minHeight: '400px' }}
     >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+      <TileLayer attribution={MAP_ATTRIBUTION} url={MAP_TILE_URL} />
       <ClickHandler onMapClick={onMapClick} />
 
       {tasks.map((task) => (
