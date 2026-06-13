@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { PhotonFeature, PhotonResponse, Coordinates } from '../../types/index.js';
+import { PhotonFeature, PhotonResponse } from '../../types/index.js';
 import styles from './LocationSearch.module.css';
 
 interface LocationSearchProps {
@@ -32,11 +32,17 @@ export function LocationSearch({
     setLoading(true);
 
     try {
-      const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lang=es`;
+      const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lang=default`;
       const res  = await fetch(url, { signal: abortRef.current.signal });
+      if (!res.ok) {
+        setResults([]);
+        setOpen(false);
+        return;
+      }
       const data: PhotonResponse = await res.json();
-      setResults(data.features);
-      setOpen(data.features.length > 0);
+      const features = data.features ?? [];
+      setResults(features);
+      setOpen(features.length > 0);
     } catch (err) {
       if ((err as Error).name !== 'AbortError') setResults([]);
     } finally {

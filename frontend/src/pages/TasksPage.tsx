@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { gsap } from 'gsap';
+import { useSearchParams } from 'react-router-dom';
 import { useTasks, useCreateTask, useCompleteTask, useDeleteTask } from '../hooks/useTasks.js';
 import { useLocations, useCreateLocation } from '../hooks/useLocations.js';
 import { TaskCard } from '../components/tasks/TaskCard.js';
@@ -323,7 +322,7 @@ function TaskForm({ locations, onClose }: TaskFormProps) {
 }
 
 /* ---- Task Detail ---- */
-function TaskDetail({ task, onDelete, onClose }: { task: Task; onDelete: (id: string) => void; onClose: () => void }) {
+function TaskDetail({ task, onDelete, onClose: _onClose }: { task: Task; onDelete: (id: string) => void; onClose: () => void }) {
   const location = typeof task.locationId === 'object' ? task.locationId : null;
   const [showConfirm, setShowConfirm] = useState(false);
 

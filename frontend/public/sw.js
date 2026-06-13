@@ -1,27 +1,24 @@
-/// <reference lib="webworker" />
 import { precacheAndRoute } from 'workbox-precaching';
 import { clientsClaim } from 'workbox-core';
-
-declare const self: ServiceWorkerGlobalScope;
 
 self.skipWaiting();
 clientsClaim();
 
 precacheAndRoute(self.__WB_MANIFEST);
 
-// Background position sync
+// Background position sync (experimental PeriodicSync API)
 self.addEventListener('periodicsync', (event) => {
   if (event.tag === 'geo-sync') {
     event.waitUntil(syncPosition());
   }
 });
 
-async function syncPosition(): Promise<void> {
+async function syncPosition() {
   try {
     const clients = await self.clients.matchAll({ type: 'window' });
     if (clients.length > 0) return; // App is open, foreground handles it
 
-    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+    const position = await new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(resolve, reject, {
         enableHighAccuracy: false,
         timeout: 10000,
@@ -29,14 +26,11 @@ async function syncPosition(): Promise<void> {
       });
     });
 
-    const { latitude: lat, longitude: lng } = position.coords;
-    const apiUrl = self.registration.scope.replace(/\/$/, '').replace('//', '//') ;
-
     await fetch(`${self.location.origin}/api/position`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ lat, lng }),
+      body: JSON.stringify({ lat: position.coords.latitude, lng: position.coords.longitude }),
     });
   } catch {
     // Background sync errors are non-critical
@@ -47,7 +41,7 @@ async function syncPosition(): Promise<void> {
 self.addEventListener('push', (event) => {
   if (!event.data) return;
 
-  let payload: { title: string; body: string; icon?: string; tag?: string; data?: Record<string, unknown> };
+  let payload;
   try {
     payload = event.data.json();
   } catch {

@@ -16,7 +16,7 @@ export function SettingsPage() {
   const { setPermissions } = useAppStore();
   const queryClient = useQueryClient();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [settings, setSettings] = useState<Partial<UserSettings>>({});
+  const [, setSettings] = useState<Partial<UserSettings>>({});
 
   const updateSettingsMutation = useMutation({
     mutationFn: (patch: Partial<UserSettings>) => api.patch('/settings', patch),

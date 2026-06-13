@@ -36,8 +36,9 @@ export function TrajectoryPage() {
   const startTime = trajectory?.points[0]?.timestamp
     ? new Date(trajectory.points[0].timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
     : null;
-  const endTime = trajectory?.points.at(-1)?.timestamp
-    ? new Date(trajectory.points.at(-1)!.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+  const lastPoint = trajectory?.points[trajectory.points.length - 1];
+  const endTime = lastPoint?.timestamp
+    ? new Date(lastPoint.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
     : null;
 
   return (
@@ -102,7 +103,7 @@ export function TrajectoryPage() {
             {positions.length > 0 && (
               <>
                 <CircleMarker center={positions[0]} radius={8} pathOptions={{ color: '#30d158', fillColor: '#30d158', fillOpacity: 1 }} />
-                <CircleMarker center={positions.at(-1)!} radius={8} pathOptions={{ color: '#ff453a', fillColor: '#ff453a', fillOpacity: 1 }} />
+                <CircleMarker center={positions[positions.length - 1]} radius={8} pathOptions={{ color: '#ff453a', fillColor: '#ff453a', fillOpacity: 1 }} />
               </>
             )}
           </MapContainer>
