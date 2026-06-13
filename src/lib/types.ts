@@ -45,3 +45,9 @@ export interface TaskFilters {
   completed?: boolean;
   q?: string;
 }
+
+export interface GeocodeResult {
+  label: string;
+  latitude: number;
+  longitude: number;
+}

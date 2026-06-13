@@ -9,6 +9,7 @@ A full-stack location-based task manager built with Next.js 16, React 19, SQLite
 - **Categories** — work, personal, shopping, errand, other
 - **Priority** — high (red), medium (amber), low (green) with color-coded map markers
 - **Filtering & search** — filter by category, priority, and completion status; full-text search on title/description
+- **Address autocomplete** — type an address in the task form to search via Photon (komoot); selecting a result auto-fills latitude and longitude
 - **Proximity alerts** — uses the browser Geolocation API to watch your position; fires a browser notification when you are within a task's alert radius of an incomplete task
 
 ## Tech Stack
@@ -45,6 +46,7 @@ Copy `.env.example` → `.env.local` and edit only the values you want to overri
 | `NEXT_PUBLIC_DEFAULT_LAT` | `-34.603` | Initial map center latitude |
 | `NEXT_PUBLIC_DEFAULT_LNG` | `-58.381` | Initial map center longitude |
 | `NEXT_PUBLIC_DEFAULT_ZOOM` | `12` | Initial map zoom level |
+| `NEXT_PUBLIC_GEOCODE_LANG` | `en` | Language for address autocomplete suggestions (`en`/`de`/`fr`/`it`). **`es` is not supported by Photon and returns 400 errors.** |
 
 ### Using a commercial map provider
 

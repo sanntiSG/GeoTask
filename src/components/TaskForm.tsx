@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { CATEGORIES, PRIORITIES, type Task, type TaskInput } from '@/lib/types';
+import { CATEGORIES, PRIORITIES, type Task, type TaskInput, type GeocodeResult } from '@/lib/types';
+import AddressAutocomplete from '@/components/AddressAutocomplete';
 
 interface Props {
   editTask?: Task | null;
@@ -95,6 +96,14 @@ export default function TaskForm({ editTask, pendingCoords, onSaved, onCancel }:
           placeholder="Optional description"
         />
       </div>
+
+      <AddressAutocomplete
+        onSelect={(r: GeocodeResult) => {
+          setLatitude(r.latitude.toFixed(6));
+          setLongitude(r.longitude.toFixed(6));
+          if (!title.trim()) setTitle(r.label);
+        }}
+      />
 
       <div className="grid grid-cols-2 gap-2">
         <div>
