@@ -7,7 +7,8 @@ import { PushSubscriptionPayload } from '../types/index.js';
  */
 export interface NotificationService {
   checkPermission(): Promise<'granted' | 'denied' | 'default'>;
-  requestPermission(): Promise<'granted' | 'denied'>;
+  /** Returns the real browser NotificationPermission — 'granted' | 'denied' | 'default'. */
+  requestPermission(): Promise<'granted' | 'denied' | 'default'>;
   subscribe(): Promise<boolean>;
   unsubscribe(): Promise<void>;
   isSubscribed(): Promise<boolean>;
@@ -26,10 +27,12 @@ const webNotificationService: NotificationService = {
     return Notification.permission;
   },
 
-  async requestPermission(): Promise<'granted' | 'denied'> {
+  async requestPermission(): Promise<'granted' | 'denied' | 'default'> {
     if (!('Notification' in window)) return 'denied';
-    const result = await Notification.requestPermission();
-    return result === 'granted' ? 'granted' : 'denied';
+    // Return the raw browser value so callers can distinguish 'denied' (permanently
+    // blocked — user must go to chrome://settings) from 'default' (dialog suppressed
+    // by quiet-messaging — user clicks the bell icon in the address bar).
+    return Notification.requestPermission();
   },
 
   async subscribe(): Promise<boolean> {

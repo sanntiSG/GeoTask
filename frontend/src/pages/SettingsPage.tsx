@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth.js';
 import { useNotifications } from '../hooks/useNotifications.js';
@@ -17,6 +17,29 @@ export function SettingsPage() {
   const queryClient = useQueryClient();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [, setSettings] = useState<Partial<UserSettings>>({});
+  // Tracks WHY the notification permission failed after user pressed "Permitir":
+  // 'denied'  → permanently blocked, must go to chrome://settings
+  // 'default' → Chrome suppressed the dialog (quiet-messaging)
+  const [notifBlockReason, setNotifBlockReason] = useState<'denied' | 'default' | null>(null);
+  // Service Worker status for the live diagnostics row
+  const [swStatus, setSwStatus] = useState<string>('verificando…');
+
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) {
+      setSwStatus('no soportado');
+      return;
+    }
+    navigator.serviceWorker
+      .getRegistration('/')
+      .then((reg) => {
+        if (!reg) setSwStatus('ninguno registrado');
+        else if (reg.active) setSwStatus('activo ✓');
+        else if (reg.installing) setSwStatus('instalando…');
+        else if (reg.waiting) setSwStatus('en espera');
+        else setSwStatus('registrado (inactivo)');
+      })
+      .catch(() => setSwStatus('error al verificar'));
+  }, []);
 
   const updateSettingsMutation = useMutation({
     mutationFn: (patch: Partial<UserSettings>) => api.patch('/settings', patch),
@@ -33,10 +56,15 @@ export function SettingsPage() {
   });
 
   const handleRequestNotifications = async () => {
-    const granted = await requestAndSubscribe();
-    // If Chrome suppressed the dialog, Notification.permission stays 'default'
-    if (!granted && Notification.permission !== 'granted') {
-      alert('🔒 El navegador ocultó el diálogo.\n\nHacé clic en el ícono de candado o campana en la barra de direcciones y elegí "Permitir". Luego volvé a intentarlo.');
+    await requestAndSubscribe();
+    // Read the actual browser permission AFTER the request to show the right guidance.
+    const perm = Notification.permission as 'granted' | 'denied' | 'default';
+    if (perm === 'granted') {
+      setNotifBlockReason(null);
+    } else {
+      // 'denied'  → permanently blocked; no dialog was shown at all.
+      // 'default' → Chrome's quiet-messaging suppressed the dialog.
+      setNotifBlockReason(perm);
     }
   };
 
@@ -164,11 +192,56 @@ export function SettingsPage() {
                 </Button>
               )}
             </SettingRow>
+
+            {/* Guidance shown only after a failed permission request */}
+            {notifBlockReason === 'denied' && (
+              <div className={styles.permissionGuide}>
+                <p className={styles.permissionGuideTitle}>🚫 Notificaciones bloqueadas</p>
+                <p className={styles.permissionGuideText}>
+                  Chrome bloqueó este sitio y no volverá a preguntar desde la página.
+                  Para activarlas:
+                </p>
+                <ol className={styles.permissionGuideSteps}>
+                  <li>Abrí <code>chrome://settings/content/notifications</code> en una nueva pestaña.</li>
+                  <li>En <em>"No pueden enviar notificaciones"</em>, quitá <code>{window.location.origin}</code>.</li>
+                  <li>Recargá esta página y presioná "Permitir" de nuevo.</li>
+                </ol>
+                <p className={styles.permissionGuideAlt}>
+                  Alternativa rápida: clic en el candado a la izquierda de la URL → Configuración del sitio → Notificaciones → Permitir.
+                </p>
+              </div>
+            )}
+            {notifBlockReason === 'default' && (
+              <div className={styles.permissionGuide}>
+                <p className={styles.permissionGuideTitle}>🔔 Diálogo oculto</p>
+                <p className={styles.permissionGuideText}>
+                  Chrome ocultó el pedido. Hacé clic en el ícono de <strong>campana o candado</strong> en la barra de direcciones y elegí <strong>Permitir</strong>, luego volvé a intentarlo.
+                </p>
+              </div>
+            )}
+
             <SettingRow label="Ubicación" hint="Para detección de proximidad">
               <Button variant="secondary" size="sm" onClick={handleRequestGeo}>
                 Actualizar
               </Button>
             </SettingRow>
+          </div>
+        </section>
+
+        {/* Diagnostics — helps identify why notifications aren't working */}
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Diagnóstico</h2>
+          <div className={styles.card}>
+            <div className={styles.diagBox}>
+              <DiagRow label="Notification.permission" value={
+                'Notification' in window ? Notification.permission : 'no soportado'
+              } />
+              <DiagRow label="Contexto seguro (HTTPS/localhost)" value={
+                window.isSecureContext ? 'sí ✓' : 'NO ✗ — las notificaciones requieren HTTPS'
+              } highlight={!window.isSecureContext} />
+              <DiagRow label="Origen" value={window.location.origin} />
+              <DiagRow label="Service Worker" value={swStatus} />
+            </div>
           </div>
         </section>
 
@@ -222,6 +295,17 @@ function SettingRow({ label, hint, children }: { label: string; hint?: string; c
         {hint && <span className={styles.rowHint}>{hint}</span>}
       </div>
       {children && <div className={styles.rowControl}>{children}</div>}
+    </div>
+  );
+}
+
+function DiagRow({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className={styles.diagRow}>
+      <span className={styles.diagLabel}>{label}</span>
+      <code className={[styles.diagValue, highlight ? styles.diagValueWarn : ''].join(' ')}>
+        {value}
+      </code>
     </div>
   );
 }

@@ -13,7 +13,11 @@ type Step = 'welcome' | 'a2hs' | 'notifications' | 'location' | 'done';
 export function OnboardingPage() {
   const [step, setStep] = useState<Step>('welcome');
   const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
-  const [notifBlocked, setNotifBlocked] = useState(false);
+  // Tracks WHY the notification permission wasn't granted, to show the right guidance:
+  // 'denied'  → site is permanently blocked in browser settings (no prompt shown at all)
+  // 'default' → Chrome suppressed the dialog (quiet-messaging) — bell icon in address bar
+  // null      → no error / not yet attempted
+  const [notifStatus, setNotifStatus] = useState<'denied' | 'default' | null>(null);
   const navigate = useNavigate();
   const { setOnboardingComplete, setPermissions } = useAppStore();
   const slideRef = useRef<HTMLDivElement>(null);
@@ -64,17 +68,18 @@ export function OnboardingPage() {
   };
 
   const handleNotifications = async () => {
+    // requestPermission() now returns the real browser value: 'granted' | 'denied' | 'default'.
     const result = await notificationService.requestPermission();
-    // Chrome may suppress the dialog and leave permission as 'default' (silent dismissal).
-    // In that case stay on this step and show guidance instead of advancing silently.
-    const actualPermission = Notification.permission as 'granted' | 'denied' | 'default';
-    if (actualPermission !== 'granted') {
-      setNotifBlocked(true);
-      setPermissions({ notifications: 'denied' });
+    if (result !== 'granted') {
+      // 'denied'  → site was permanently blocked; Chrome will NEVER show the dialog from JS.
+      //             User MUST go to chrome://settings/content/notifications to unblock.
+      // 'default' → Chrome's quiet-messaging suppressed the dialog; bell icon in address bar.
+      setNotifStatus(result);
+      setPermissions({ notifications: result === 'default' ? 'prompt' : 'denied' });
       return;
     }
-    setNotifBlocked(false);
-    setPermissions({ notifications: result });
+    setNotifStatus(null);
+    setPermissions({ notifications: 'granted' });
     await notificationService.subscribe();
     goToStep('location');
   };
@@ -154,23 +159,31 @@ export function OnboardingPage() {
         <div className={styles.text}>
           <h2 className={styles.title}>{current.title}</h2>
           <p className={styles.description}>{current.description}</p>
-          {step === 'notifications' && notifBlocked && (
+          {step === 'notifications' && notifStatus === 'denied' && (
             <p className={styles.permissionHint}>
-              🔒 El navegador ocultó el diálogo. Hacé clic en el ícono de campana o candado en la barra de direcciones y elegí <strong>Permitir</strong>, luego presioná el botón de abajo.
+              🚫 <strong>Notificaciones bloqueadas.</strong> Chrome no volverá a preguntar porque el sitio fue bloqueado anteriormente. Para activarlas:
+              <br />1. Abrí <code>chrome://settings/content/notifications</code> en una nueva pestaña.
+              <br />2. En <em>"No pueden enviar notificaciones"</em>, quitá <code>{window.location.origin}</code>.
+              <br />3. Recargá esta página y presioná el botón de abajo.
+            </p>
+          )}
+          {step === 'notifications' && notifStatus === 'default' && (
+            <p className={styles.permissionHint}>
+              🔔 Chrome ocultó el diálogo. Hacé clic en el ícono de <strong>campana o candado</strong> en la barra de direcciones, elegí <strong>Permitir</strong> y luego presioná el botón de abajo.
             </p>
           )}
         </div>
 
         <div className={styles.actions}>
           <Button onClick={current.action} size="lg" fullWidth>
-            {step === 'notifications' && notifBlocked ? 'Reintentar' : current.actionLabel}
+            {step === 'notifications' && notifStatus !== null ? 'Reintentar' : current.actionLabel}
           </Button>
           {current.skipLabel && (
             <Button
               variant="ghost"
               size="md"
               onClick={() => {
-                setNotifBlocked(false);
+                setNotifStatus(null);
                 const next = stepOrder[currentIdx + 1];
                 if (next) goToStep(next);
               }}

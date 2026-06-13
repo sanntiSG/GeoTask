@@ -142,3 +142,78 @@
 }
 
 .deleteBtns { display: flex; gap: var(--space-3); }
+
+/* ── Permission guidance block ─────────────────────────────────────────── */
+.permissionGuide {
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+
+.permissionGuideTitle {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.permissionGuideText {
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  line-height: 1.55;
+}
+
+.permissionGuideSteps {
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  line-height: 1.7;
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.permissionGuideAlt {
+  font-size: var(--text-xs);
+  color: var(--text-3);
+  line-height: 1.5;
+  padding-top: var(--space-1);
+}
+
+/* ── Diagnostics block ──────────────────────────────────────────────────── */
+.diagBox {
+  padding: var(--space-2) 0;
+}
+
+.diagRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-5);
+  flex-wrap: wrap;
+}
+
+.diagRow:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.diagLabel {
+  font-size: var(--text-xs);
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+.diagValue {
+  font-size: var(--text-xs);
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  color: var(--text-2);
+  word-break: break-all;
+  text-align: right;
+}
+
+.diagValueWarn {
+  color: var(--error);
+}
