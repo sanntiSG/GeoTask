@@ -34,14 +34,29 @@ const webNotificationService: NotificationService = {
 
   async subscribe(): Promise<boolean> {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+    if (Notification.permission !== 'granted') return false;
 
     try {
-      const registration = await navigator.serviceWorker.ready;
+      // Ensure a SW registration exists (may not be registered in dev mode)
+      let reg = await navigator.serviceWorker.getRegistration('/');
+      if (!reg) {
+        reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+      }
+
+      // Wait for the SW to become active with a 10-second timeout
+      const registration = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('SW ready timeout')), 10_000),
+        ),
+      ]);
 
       const { data } = await api.get<{ publicKey: string }>('/notifications/vapid-public-key');
       const applicationServerKey = urlBase64ToUint8Array(data.publicKey);
 
-      const subscription = await registration.pushManager.subscribe({
+      // Reuse existing subscription if present (avoids duplicate DB entries)
+      const existing = await registration.pushManager.getSubscription();
+      const subscription = existing ?? await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
       });
@@ -56,7 +71,9 @@ const webNotificationService: NotificationService = {
 
       await api.post('/notifications/subscribe', payload);
       return true;
-    } catch {
+    } catch (err) {
+      // Log only in dev — never expose user data in production logs
+      if (import.meta.env.DEV) console.warn('[Push subscribe error]', err);
       return false;
     }
   },

@@ -13,6 +13,7 @@ type Step = 'welcome' | 'a2hs' | 'notifications' | 'location' | 'done';
 export function OnboardingPage() {
   const [step, setStep] = useState<Step>('welcome');
   const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
+  const [notifBlocked, setNotifBlocked] = useState(false);
   const navigate = useNavigate();
   const { setOnboardingComplete, setPermissions } = useAppStore();
   const slideRef = useRef<HTMLDivElement>(null);
@@ -64,8 +65,17 @@ export function OnboardingPage() {
 
   const handleNotifications = async () => {
     const result = await notificationService.requestPermission();
+    // Chrome may suppress the dialog and leave permission as 'default' (silent dismissal).
+    // In that case stay on this step and show guidance instead of advancing silently.
+    const actualPermission = Notification.permission as 'granted' | 'denied' | 'default';
+    if (actualPermission !== 'granted') {
+      setNotifBlocked(true);
+      setPermissions({ notifications: 'denied' });
+      return;
+    }
+    setNotifBlocked(false);
     setPermissions({ notifications: result });
-    if (result === 'granted') await notificationService.subscribe();
+    await notificationService.subscribe();
     goToStep('location');
   };
 
@@ -144,17 +154,23 @@ export function OnboardingPage() {
         <div className={styles.text}>
           <h2 className={styles.title}>{current.title}</h2>
           <p className={styles.description}>{current.description}</p>
+          {step === 'notifications' && notifBlocked && (
+            <p className={styles.permissionHint}>
+              🔒 El navegador ocultó el diálogo. Hacé clic en el ícono de campana o candado en la barra de direcciones y elegí <strong>Permitir</strong>, luego presioná el botón de abajo.
+            </p>
+          )}
         </div>
 
         <div className={styles.actions}>
           <Button onClick={current.action} size="lg" fullWidth>
-            {current.actionLabel}
+            {step === 'notifications' && notifBlocked ? 'Reintentar' : current.actionLabel}
           </Button>
           {current.skipLabel && (
             <Button
               variant="ghost"
               size="md"
               onClick={() => {
+                setNotifBlocked(false);
                 const next = stepOrder[currentIdx + 1];
                 if (next) goToStep(next);
               }}

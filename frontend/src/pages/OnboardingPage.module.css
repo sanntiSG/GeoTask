@@ -79,6 +79,19 @@
   margin: 0 auto;
 }
 
+.permissionHint {
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  line-height: 1.55;
+  text-align: left;
+  max-width: 52ch;
+  margin: 0 auto;
+}
+
 .actions {
   width: 100%;
   display: flex;

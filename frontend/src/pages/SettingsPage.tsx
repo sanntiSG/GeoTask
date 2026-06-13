@@ -28,6 +28,18 @@ export function SettingsPage() {
     onSuccess: () => window.location.href = '/login',
   });
 
+  const testNotifMutation = useMutation({
+    mutationFn: () => api.post('/notifications/test'),
+  });
+
+  const handleRequestNotifications = async () => {
+    const granted = await requestAndSubscribe();
+    // If Chrome suppressed the dialog, Notification.permission stays 'default'
+    if (!granted && Notification.permission !== 'granted') {
+      alert('🔒 El navegador ocultó el diálogo.\n\nHacé clic en el ícono de candado o campana en la barra de direcciones y elegí "Permitir". Luego volvé a intentarlo.');
+    }
+  };
+
   const handleRequestGeo = async () => {
     const result = await geolocationService.requestPermission();
     setPermissions({ geolocation: result });
@@ -137,8 +149,18 @@ export function SettingsPage() {
           <div className={styles.card}>
             <SettingRow label="Notificaciones" hint={notificationPermission === 'granted' ? '✅ Concedido' : '❌ No concedido'}>
               {notificationPermission !== 'granted' && (
-                <Button variant="secondary" size="sm" onClick={requestAndSubscribe}>
+                <Button variant="secondary" size="sm" onClick={handleRequestNotifications}>
                   Permitir
+                </Button>
+              )}
+              {notificationPermission === 'granted' && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => testNotifMutation.mutate()}
+                  loading={testNotifMutation.isPending}
+                >
+                  Probar
                 </Button>
               )}
             </SettingRow>
