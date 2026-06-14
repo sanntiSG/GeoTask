@@ -3,21 +3,21 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { corsOptions } from './config/cors.js';
-import { connectDatabase } from './config/database.js';
-import './config/passport.js';
-import { globalLimiter } from './middleware/rateLimiter.js';
-import { initWebPush } from './services/push.service.js';
-import { startCronJobs } from './services/cron.service.js';
+import { corsOptions } from './config/cors';
+import { connectDatabase } from './config/database';
+import './config/passport';
+import { globalLimiter } from './middleware/rateLimiter';
+import { initWebPush } from './services/push.service';
+import { startCronJobs } from './services/cron.service';
 
-import authRoutes from './routes/auth.js';
-import taskRoutes from './routes/tasks.js';
-import locationRoutes from './routes/locations.js';
-import trajectoryRoutes from './routes/trajectory.js';
-import notificationRoutes from './routes/notifications.js';
-import positionRoutes from './routes/position.js';
-import adminRoutes from './routes/admin.js';
-import settingsRoutes from './routes/settings.js';
+import authRoutes from './routes/auth';
+import taskRoutes from './routes/tasks';
+import locationRoutes from './routes/locations';
+import trajectoryRoutes from './routes/trajectory';
+import notificationRoutes from './routes/notifications';
+import positionRoutes from './routes/position';
+import adminRoutes from './routes/admin';
+import settingsRoutes from './routes/settings';
 
 const app = express();
 

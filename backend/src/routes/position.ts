@@ -1,10 +1,11 @@
 import { Router, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
-import { positionLimiter } from '../middleware/rateLimiter.js';
-import { User } from '../models/User.js';
-import { Trajectory } from '../models/Trajectory.js';
-import { haversineDistance } from '../utils/haversine.js';
+import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { positionLimiter } from '../middleware/rateLimiter';
+import { User } from '../models/User';
+import { Trajectory } from '../models/Trajectory';
+import { haversineDistance } from '../utils/haversine';
+import { checkProximityForUser } from '../services/proximity.service';
 
 const router = Router();
 router.use(authMiddleware, positionLimiter);
@@ -58,6 +59,10 @@ router.post(
       }
 
       res.json({ ok: true });
+
+      // Fire-and-forget proximity check immediately after the position is saved.
+      // This gives instant notifications without waiting for the next cron tick.
+      checkProximityForUser(req.user!.userId).catch(() => {});
     } catch {
       res.status(500).json({ error: 'Server error' });
     }

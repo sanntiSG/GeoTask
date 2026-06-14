@@ -80,7 +80,10 @@ export function OnboardingPage() {
     }
     setNotifStatus(null);
     setPermissions({ notifications: 'granted' });
-    await notificationService.subscribe();
+    const sub = await notificationService.subscribe();
+    if (import.meta.env.DEV && !sub.ok) {
+      console.warn('[Onboarding] Push subscribe failed:', sub.reason);
+    }
     goToStep('location');
   };
 

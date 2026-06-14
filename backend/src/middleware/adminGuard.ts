@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { AuthRequest } from './auth.js';
+import { AuthRequest } from './auth';
 
 export function adminGuard(req: AuthRequest, res: Response, next: NextFunction): void {
   if (req.user?.role !== 'admin') {

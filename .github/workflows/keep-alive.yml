@@ -1,0 +1,41 @@
+# Mantiene despierto el backend en Render free tier (se duerme tras 15 min sin tráfico).
+# Hace ping a /health cada 10 min. Sin este workflow, el primer request tras inactividad
+# sufre un cold start de ~30-60s, retrasando el primer sync de posición/notificación.
+#
+# ⚠️  ANTES DE ACTIVAR: reemplaza la URL con la de tu servicio real en Render.
+#     Panel Render → tu servicio → Settings → confirma el hostname exacto.
+#     Por defecto sería: https://geotask-backend.onrender.com/health
+#
+# 💡 Minutos de GitHub Actions:
+#     - Repo PÚBLICO  → minutos ilimitados (sin costo).
+#     - Repo PRIVADO  → ~4300 min/mes a */10 → supera los 2000 gratuitos.
+#       Solución: hacer el repo público, usar horario activo (ver opción comentada abajo),
+#       o migrar a UptimeRobot (monitor gratuito, ping cada 5 min).
+#
+# 🕐 Horas de Render free: mantener 24/7 consume ~730/750 h disponibles.
+#    Opción horario activo: cron: '*/10 7-23 * * *'  (solo 7:00-23:59 UTC)
+
+name: keep-alive
+
+on:
+  schedule:
+    # Cada 10 min — margen suficiente ante el lag habitual de GitHub Actions (5-15 min).
+    # Si el servicio sigue durmiéndose: cambiar a */5, o bajar al horario activo arriba.
+    - cron: '*/10 * * * *'
+  # Permite disparar manualmente desde Actions → útil para probar que el endpoint responde.
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping Render /health
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake up backend
+        # -f  → falla con código de error si el servidor devuelve 4xx/5xx
+        # -s  → silencioso (sin barra de progreso)
+        # -S  → muestra el error si -f falla
+        # --max-time 60 → espera hasta 60s (necesario para el primer cold-start real)
+        run: |
+          echo "Pinging backend at $(date -u)"
+          curl -fsS --max-time 60 https://geotask-backend.onrender.com/health
+          echo "Response OK"

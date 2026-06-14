@@ -16,10 +16,14 @@ export function useNotifications() {
 
     if (permResult !== 'granted') return false;
 
-    const subscribed = await notificationService.subscribe();
-    return subscribed;
+    const result = await notificationService.subscribe();
+    return result.ok;
   }, [setPermissions]);
 
+  /**
+   * Reconcile the store with the real browser permission value.
+   * Call this on mount (Settings, App init) so stale localStorage values don't mislead the UI.
+   */
   const checkNotificationPermission = useCallback(async () => {
     const status = await notificationService.checkPermission();
     const mapped = status === 'default' ? 'prompt' : (status as 'granted' | 'denied' | 'prompt');
@@ -27,9 +31,24 @@ export function useNotifications() {
     return mapped;
   }, [setPermissions]);
 
+  /**
+   * When permission is already granted, guarantee a valid PushSubscription exists in the DB.
+   * Safe to call repeatedly — subscribe() is idempotent (reuses existing browser subscription).
+   * Returns { ok, reason } so callers can surface the error.
+   */
+  const ensureSubscribed = useCallback(async (): Promise<{ ok: boolean; reason?: string }> => {
+    // First reconcile so we have the true browser state
+    const realStatus = await checkNotificationPermission();
+    if (realStatus !== 'granted') {
+      return { ok: false, reason: 'permission-not-granted' };
+    }
+    return notificationService.subscribe();
+  }, [checkNotificationPermission]);
+
   return {
     notificationPermission: permissions.notifications,
     requestAndSubscribe,
     checkNotificationPermission,
+    ensureSubscribed,
   };
 }

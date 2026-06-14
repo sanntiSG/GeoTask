@@ -12,7 +12,7 @@ import styles from './SettingsPage.module.css';
 
 export function SettingsPage() {
   const { user, logout } = useAuth();
-  const { notificationPermission, requestAndSubscribe } = useNotifications();
+  const { notificationPermission, requestAndSubscribe, checkNotificationPermission, ensureSubscribed } = useNotifications();
   const { setPermissions } = useAppStore();
   const queryClient = useQueryClient();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -21,8 +21,15 @@ export function SettingsPage() {
   // 'denied'  → permanently blocked, must go to chrome://settings
   // 'default' → Chrome suppressed the dialog (quiet-messaging)
   const [notifBlockReason, setNotifBlockReason] = useState<'denied' | 'default' | null>(null);
+  // Feedback message shown after pressing "Probar"
+  const [testFeedback, setTestFeedback] = useState<string | null>(null);
   // Service Worker status for the live diagnostics row
   const [swStatus, setSwStatus] = useState<string>('verificando…');
+
+  useEffect(() => {
+    // Reconcile the persisted store permission with the real browser value on every mount
+    checkNotificationPermission();
+  }, [checkNotificationPermission]);
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) {
@@ -52,7 +59,30 @@ export function SettingsPage() {
   });
 
   const testNotifMutation = useMutation({
-    mutationFn: () => api.post('/notifications/test'),
+    mutationFn: async () => {
+      setTestFeedback(null);
+      // Always refresh the subscription before testing — ensures we are registered against
+      // the currently-active SW (which may have changed due to HMR or browser rotation),
+      // so we never hit a stale endpoint and have to manually toggle the permission.
+      await ensureSubscribed();
+      const { data } = await api.post<{ ok: boolean; reason?: string; sent?: number; total?: number; errors?: unknown[] }>('/notifications/test');
+      return data;
+    },
+    onSuccess: async (data) => {
+      if (data.ok) {
+        setTestFeedback('✅ Notificación enviada. Debería aparecer en instantes.');
+      } else if (data.reason === 'no-subscriptions') {
+        // ensureSubscribed() ran but the subscription still isn't in the DB — SW issue
+        setTestFeedback('❌ No se pudo crear la suscripción. Abrí DevTools → Application → Service Workers, desregistrá el SW, recargá y volvé a probar.');
+      } else if (data.reason === 'send-failed') {
+        setTestFeedback('❌ El envío falló (revisar VAPID keys en el backend). Ver consola del servidor.');
+      } else {
+        setTestFeedback(`❌ Error: ${data.reason ?? 'desconocido'}`);
+      }
+    },
+    onError: () => {
+      setTestFeedback('❌ No se pudo conectar con el servidor.');
+    },
   });
 
   const handleRequestNotifications = async () => {
@@ -150,7 +180,15 @@ export function SettingsPage() {
                 onBlur={(e) => updateSettingsMutation.mutate({ notificationInterval: Number(e.target.value) })}
               />
             </SettingRow>
-            <SettingRow label="Volver a notificar" hint="Minutos si no se marca como hecha">
+            <SettingRow label="Re-notificación por defecto" hint="Se aplica al crear tareas nuevas">
+              <input
+                type="checkbox"
+                defaultChecked={currentSettings?.renotifyEnabled ?? true}
+                className={styles.checkbox}
+                onChange={(e) => updateSettingsMutation.mutate({ renotifyEnabled: e.target.checked })}
+              />
+            </SettingRow>
+            <SettingRow label="Minutos por defecto" hint="Intervalo de re-notificación para tareas nuevas">
               <input
                 type="number"
                 min={1}
@@ -158,14 +196,6 @@ export function SettingsPage() {
                 defaultValue={currentSettings?.renotifyAfter ?? 30}
                 className={styles.numInput}
                 onBlur={(e) => updateSettingsMutation.mutate({ renotifyAfter: Number(e.target.value) })}
-              />
-            </SettingRow>
-            <SettingRow label="Activar re-notificación">
-              <input
-                type="checkbox"
-                defaultChecked={currentSettings?.renotifyEnabled ?? true}
-                className={styles.checkbox}
-                onChange={(e) => updateSettingsMutation.mutate({ renotifyEnabled: e.target.checked })}
               />
             </SettingRow>
           </div>
@@ -191,6 +221,9 @@ export function SettingsPage() {
                   Probar
                 </Button>
               )}
+            {testFeedback && (
+              <p className={styles.testFeedback}>{testFeedback}</p>
+            )}
             </SettingRow>
 
             {/* Guidance shown only after a failed permission request */}

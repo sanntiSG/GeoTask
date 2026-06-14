@@ -1,6 +1,6 @@
 import cron from 'node-cron';
-import { checkProximityForAllUsers } from './proximity.service.js';
-import { Trajectory } from '../models/Trajectory.js';
+import { checkProximityForAllUsers } from './proximity.service';
+import { Trajectory } from '../models/Trajectory';
 
 export function startCronJobs(): void {
   cron.schedule('* * * * *', async () => {

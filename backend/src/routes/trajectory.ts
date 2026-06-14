@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { param, validationResult } from 'express-validator';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
-import { Trajectory } from '../models/Trajectory.js';
+import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { Trajectory } from '../models/Trajectory';
 
 const router = Router();
 router.use(authMiddleware);

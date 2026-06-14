@@ -1,9 +1,10 @@
 import { Router, Response } from 'express';
 import { body, param, query, validationResult } from 'express-validator';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
-import { Task } from '../models/Task.js';
-import { Location } from '../models/Location.js';
+import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { Task } from '../models/Task';
+import { Location } from '../models/Location';
 import { Types } from 'mongoose';
+import { checkProximityForUser } from '../services/proximity.service';
 
 const router = Router();
 router.use(authMiddleware);
@@ -57,6 +58,10 @@ router.post('/', taskValidation, async (req: AuthRequest, res: Response) => {
 
     const populated = await task.populate('locationId', 'name coordinates radius');
     res.status(201).json(populated);
+
+    // Fire-and-forget: check if the user is already inside the task's location
+    // so the notification arrives instantly when the task is created at the current spot.
+    checkProximityForUser(req.user!.userId).catch(() => {});
   } catch {
     res.status(500).json({ error: 'Server error' });
   }

@@ -4,7 +4,6 @@ import { gsap } from 'gsap';
 import { useAuth } from '../hooks/useAuth.js';
 import { useTasks } from '../hooks/useTasks.js';
 import { useLocations } from '../hooks/useLocations.js';
-import { useGeolocationSync } from '../hooks/useGeolocation.js';
 import { TaskCard } from '../components/tasks/TaskCard.js';
 import { useCompleteTask } from '../hooks/useTasks.js';
 import { revealList, prefersReducedMotion } from '../utils/animations.js';
@@ -18,8 +17,6 @@ export function HomePage() {
   const completeTask = useCompleteTask();
   const headerRef    = useRef<HTMLDivElement>(null);
   const cardsRef     = useRef<HTMLDivElement>(null);
-
-  useGeolocationSync();
 
   useEffect(() => {
     if (prefersReducedMotion()) return;

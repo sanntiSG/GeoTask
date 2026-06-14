@@ -11,6 +11,7 @@ export function useGeolocationSync() {
   const { isAuthenticated } = useAuth();
   const stopWatchRef = useRef<(() => void) | null>(null);
   const lastSyncRef = useRef<number>(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const syncPosition = useMutation({
     mutationFn: (coords: Coordinates) => api.post('/position', coords),
@@ -31,8 +32,20 @@ export function useGeolocationSync() {
 
     stopWatchRef.current = geolocationService.watchPosition(handlePosition);
 
+    // watchPosition fires infrequently when the device is stationary, which means
+    // lastPosition.updatedAt goes stale and the cron stops evaluating the user.
+    // Poll getCurrentPosition every SYNC_INTERVAL_MS as a guaranteed heartbeat so
+    // a stationary user's position stays within the 5-min cron window.
+    intervalRef.current = setInterval(() => {
+      geolocationService
+        .getCurrentPosition()
+        .then((coords) => handlePosition(coords))
+        .catch(() => {});
+    }, SYNC_INTERVAL_MS);
+
     return () => {
       stopWatchRef.current?.();
+      if (intervalRef.current !== null) clearInterval(intervalRef.current);
     };
   }, [isAuthenticated, handlePosition]);
 }

@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTasks, useCreateTask, useCompleteTask, useDeleteTask } from '../hooks/useTasks.js';
 import { useLocations, useCreateLocation } from '../hooks/useLocations.js';
+import { useCurrentPosition } from '../hooks/useGeolocation.js';
+import { useAuth } from '../hooks/useAuth.js';
 import { TaskCard } from '../components/tasks/TaskCard.js';
 import { Modal } from '../components/ui/Modal.js';
 import { Button } from '../components/ui/Button.js';
@@ -124,6 +126,8 @@ interface TaskFormProps {
 function TaskForm({ locations, onClose }: TaskFormProps) {
   const createTask     = useCreateTask();
   const createLocation = useCreateLocation();
+  const { getCurrentPosition } = useCurrentPosition();
+  const { user } = useAuth();
 
   const [title, setTitle]       = useState('');
   const [emoji, setEmoji]       = useState('📍');
@@ -132,8 +136,13 @@ function TaskForm({ locations, onClose }: TaskFormProps) {
   const [locationId, setLocationId] = useState('');
   const [newLocName, setNewLocName] = useState('');
   const [newLocCoords, setNewLocCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [notifyAgainEnabled, setNotifyAgainEnabled] = useState(false);
-  const [notifyAgainAfter, setNotifyAgainAfter]     = useState(30);
+  // radius: 0 means "use existing location's radius" (no new location being created)
+  const defaultRadius = user?.settings?.defaultRadius ?? 300;
+  const [radius, setRadius] = useState(defaultRadius);
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+  const [notifyAgainEnabled, setNotifyAgainEnabled] = useState(user?.settings?.renotifyEnabled ?? false);
+  const [notifyAgainAfter, setNotifyAgainAfter]     = useState(user?.settings?.renotifyAfter ?? 30);
   const [recurrenceDays, setRecurrenceDays] = useState<number[]>([]);
 
   const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -144,6 +153,22 @@ function TaskForm({ locations, onClose }: TaskFormProps) {
     setNewLocName(parts.join(', '));
     setNewLocCoords({ lat, lng });
     setLocationId('');
+    setGpsError(null);
+  };
+
+  const handleUseCurrentPosition = async () => {
+    setGpsLoading(true);
+    setGpsError(null);
+    try {
+      const coords = await getCurrentPosition();
+      setNewLocCoords(coords);
+      setNewLocName('Mi ubicación actual');
+      setLocationId('');
+    } catch {
+      setGpsError('No se pudo obtener la ubicación. Verificá que el permiso esté concedido.');
+    } finally {
+      setGpsLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -156,6 +181,7 @@ function TaskForm({ locations, onClose }: TaskFormProps) {
       const result = await createLocation.mutateAsync({
         name: newLocName,
         coordinates: newLocCoords,
+        radius,
       });
       finalLocationId = result.data._id;
     }
@@ -243,20 +269,81 @@ function TaskForm({ locations, onClose }: TaskFormProps) {
       {/* Location */}
       <div className={styles.field}>
         <label className={styles.label}>Ubicación</label>
-        {locations.length > 0 && (
+
+        {/* "Use current position" button — only shown when no location is selected yet */}
+        {!newLocCoords && !locationId && (
+          <>
+            <button
+              type="button"
+              className={styles.gpsBtn}
+              onClick={handleUseCurrentPosition}
+              disabled={gpsLoading}
+            >
+              {gpsLoading ? <span className={styles.gpsBtnSpinner} /> : '📍'}
+              {gpsLoading ? ' Obteniendo ubicación…' : ' Usar mi ubicación actual'}
+            </button>
+            {gpsError && <p className={styles.gpsError}>{gpsError}</p>}
+          </>
+        )}
+
+        {/* Selected GPS position label */}
+        {newLocCoords && !locationId && (
+          <div className={styles.locSelectedWrap}>
+            <input
+              type="text"
+              className={styles.locNameInput}
+              value={newLocName}
+              onChange={(e) => setNewLocName(e.target.value)}
+              placeholder="Nombre de la ubicación"
+              maxLength={100}
+            />
+            <div className={styles.radiusRow}>
+              <label className={styles.radiusLabel}>Radio (m)</label>
+              <input
+                type="number"
+                min={50}
+                max={5000}
+                value={radius}
+                onChange={(e) => setRadius(Number(e.target.value))}
+                className={styles.numInput}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Divider */}
+        {!newLocCoords && !locationId && (
+          <div className={styles.orDivider}><span>o buscar lugar</span></div>
+        )}
+
+        {/* Existing location picker */}
+        {!newLocCoords && locations.length > 0 && (
           <select
             className={styles.select}
             value={locationId}
-            onChange={(e) => { setLocationId(e.target.value); setNewLocCoords(null); setNewLocName(''); }}
+            onChange={(e) => { setLocationId(e.target.value); setNewLocCoords(null); setNewLocName(''); setGpsError(null); }}
           >
-            <option value="">— Buscar nueva ubicación —</option>
+            <option value="">— Elegir ubicación guardada —</option>
             {locations.map((loc) => (
               <option key={loc._id} value={loc._id}>{loc.name}</option>
             ))}
           </select>
         )}
-        {!locationId && (
+
+        {/* Photon search — only when no GPS position selected and no saved location chosen */}
+        {!newLocCoords && !locationId && (
           <LocationSearch onSelect={handleLocationSelect} placeholder="Buscar lugar…" initialValue={newLocName} />
+        )}
+
+        {/* "Change location" link when something is already selected */}
+        {(newLocCoords || locationId) && (
+          <button
+            type="button"
+            className={styles.changeLoc}
+            onClick={() => { setNewLocCoords(null); setNewLocName(''); setLocationId(''); setGpsError(null); }}
+          >
+            Cambiar ubicación
+          </button>
         )}
       </div>
 

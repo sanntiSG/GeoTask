@@ -1,13 +1,13 @@
 import { Router, Response } from 'express';
 import { param, query, validationResult } from 'express-validator';
-import { authMiddleware } from '../middleware/auth.js';
-import { adminGuard } from '../middleware/adminGuard.js';
-import { AuthRequest } from '../middleware/auth.js';
-import { User } from '../models/User.js';
-import { Task } from '../models/Task.js';
-import { Location } from '../models/Location.js';
-import { Trajectory } from '../models/Trajectory.js';
-import { PushSubscription } from '../models/PushSubscription.js';
+import { authMiddleware } from '../middleware/auth';
+import { adminGuard } from '../middleware/adminGuard';
+import { AuthRequest } from '../middleware/auth';
+import { User } from '../models/User';
+import { Task } from '../models/Task';
+import { Location } from '../models/Location';
+import { Trajectory } from '../models/Trajectory';
+import { PushSubscription } from '../models/PushSubscription';
 
 const router = Router();
 router.use(authMiddleware, adminGuard);

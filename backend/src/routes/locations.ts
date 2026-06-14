@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { body, param, validationResult } from 'express-validator';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
-import { Location } from '../models/Location.js';
+import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { Location } from '../models/Location';
 
 const router = Router();
 router.use(authMiddleware);

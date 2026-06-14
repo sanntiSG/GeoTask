@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
 import passport from 'passport';
-import { authLimiter } from '../middleware/rateLimiter.js';
-import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
-import { User, IUser } from '../models/User.js';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { authLimiter } from '../middleware/rateLimiter';
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt';
+import { User, IUser } from '../models/User';
+import { authMiddleware, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 

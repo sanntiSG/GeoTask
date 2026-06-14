@@ -9,7 +9,7 @@ export interface NotificationService {
   checkPermission(): Promise<'granted' | 'denied' | 'default'>;
   /** Returns the real browser NotificationPermission — 'granted' | 'denied' | 'default'. */
   requestPermission(): Promise<'granted' | 'denied' | 'default'>;
-  subscribe(): Promise<boolean>;
+  subscribe(): Promise<{ ok: boolean; reason?: string }>;
   unsubscribe(): Promise<void>;
   isSubscribed(): Promise<boolean>;
 }
@@ -35,18 +35,17 @@ const webNotificationService: NotificationService = {
     return Notification.requestPermission();
   },
 
-  async subscribe(): Promise<boolean> {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
-    if (Notification.permission !== 'granted') return false;
+  async subscribe(): Promise<{ ok: boolean; reason?: string }> {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      return { ok: false, reason: 'not-supported' };
+    }
+    if (Notification.permission !== 'granted') {
+      return { ok: false, reason: 'permission-not-granted' };
+    }
 
     try {
-      // Ensure a SW registration exists (may not be registered in dev mode)
-      let reg = await navigator.serviceWorker.getRegistration('/');
-      if (!reg) {
-        reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-      }
-
-      // Wait for the SW to become active with a 10-second timeout
+      // SW is registered by registerSW() in main.tsx (vite-plugin-pwa virtual module).
+      // Wait for it to become active with a 10-second timeout.
       const registration = await Promise.race([
         navigator.serviceWorker.ready,
         new Promise<never>((_, reject) =>
@@ -73,11 +72,12 @@ const webNotificationService: NotificationService = {
       };
 
       await api.post('/notifications/subscribe', payload);
-      return true;
+      return { ok: true };
     } catch (err) {
-      // Log only in dev — never expose user data in production logs
+      // Log in dev to surface VAPID / SW / network issues
       if (import.meta.env.DEV) console.warn('[Push subscribe error]', err);
-      return false;
+      const msg = err instanceof Error ? err.message : String(err);
+      return { ok: false, reason: msg };
     }
   },
 
