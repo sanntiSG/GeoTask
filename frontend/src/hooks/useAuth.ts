@@ -4,7 +4,8 @@ import api from '../services/api.service.js';
 import { useAuthStore } from '../stores/auth.store.js';
 import { User } from '../types/index.js';
 
-const API_URL = import.meta.env.VITE_API_URL ?? '';
+const isDev = import.meta.env.DEV;
+const API_URL = isDev ? (import.meta.env.VITE_API_URL ?? 'http://localhost:5000') : '';
 
 export function useAuth() {
   const { user, isLoading, setUser, setLoading } = useAuthStore();

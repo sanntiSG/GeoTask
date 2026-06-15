@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? '';
+const isDev = import.meta.env.DEV;
+const BASE_URL = isDev ? (import.meta.env.VITE_API_URL ?? 'http://localhost:5000') : '';
 
 const api: AxiosInstance = axios.create({
   baseURL: `${BASE_URL}/api`,
