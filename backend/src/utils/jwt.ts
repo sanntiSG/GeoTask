@@ -7,13 +7,13 @@ export interface JWTPayload {
 
 export function signAccessToken(payload: JWTPayload): string {
   return jwt.sign(payload, process.env.JWT_SECRET!, {
-    expiresIn: process.env.JWT_EXPIRES_IN ?? '15m',
+    expiresIn: (process.env.JWT_EXPIRES_IN ?? '15m') as any,
   });
 }
 
 export function signRefreshToken(payload: JWTPayload): string {
   return jwt.sign(payload, process.env.JWT_REFRESH_SECRET!, {
-    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
+    expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN ?? '7d') as any,
   });
 }
 

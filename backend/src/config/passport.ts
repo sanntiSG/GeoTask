@@ -29,7 +29,7 @@ passport.use(
           await user.save();
         }
 
-        return done(null, user);
+        return done(null, user as unknown as Express.User);
       } catch (err) {
         return done(err as Error);
       }

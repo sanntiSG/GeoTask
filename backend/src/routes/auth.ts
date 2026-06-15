@@ -5,12 +5,17 @@ import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/
 import { User, IUser } from '../models/User';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 
-const router = Router();
+const router: Router = Router();
+
+const isProd = process.env.NODE_ENV === 'production';
 
 const COOKIE_OPTS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
+  secure: isProd,
+  // SameSite=None es obligatorio para cookies cross-site (frontend en Netlify,
+  // backend en Render). SameSite=None requiere Secure=true, que ya se da en prod.
+  // En desarrollo se usa 'strict' para no exigir HTTPS.
+  sameSite: (isProd ? 'none' : 'strict') as 'none' | 'strict',
   path: '/',
 };
 
@@ -24,7 +29,7 @@ router.get(
   '/google/callback',
   passport.authenticate('google', { session: false, failureRedirect: `${process.env.FRONTEND_URL}/login?error=oauth` }),
   (req: Request, res: Response) => {
-    const user = req.user as IUser;
+    const user = req.user as unknown as IUser;
     const payload = { userId: user._id.toString(), role: user.role };
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);

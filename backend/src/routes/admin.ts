@@ -9,7 +9,7 @@ import { Location } from '../models/Location';
 import { Trajectory } from '../models/Trajectory';
 import { PushSubscription } from '../models/PushSubscription';
 
-const router = Router();
+const router: Router = Router();
 router.use(authMiddleware, adminGuard);
 
 router.get('/stats', async (_req, res: Response) => {

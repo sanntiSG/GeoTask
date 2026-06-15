@@ -6,7 +6,7 @@ import { Location } from '../models/Location';
 import { Types } from 'mongoose';
 import { checkProximityForUser } from '../services/proximity.service';
 
-const router = Router();
+const router: Router = Router();
 router.use(authMiddleware);
 
 const taskValidation = [

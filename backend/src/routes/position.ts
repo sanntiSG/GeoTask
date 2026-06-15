@@ -7,7 +7,7 @@ import { Trajectory } from '../models/Trajectory';
 import { haversineDistance } from '../utils/haversine';
 import { checkProximityForUser } from '../services/proximity.service';
 
-const router = Router();
+const router: Router = Router();
 router.use(authMiddleware, positionLimiter);
 
 router.post(

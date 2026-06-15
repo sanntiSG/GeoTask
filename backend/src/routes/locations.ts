@@ -3,7 +3,7 @@ import { body, param, validationResult } from 'express-validator';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { Location } from '../models/Location';
 
-const router = Router();
+const router: Router = Router();
 router.use(authMiddleware);
 
 const locationValidation = [

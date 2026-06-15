@@ -4,7 +4,7 @@ import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { PushSubscription } from '../models/PushSubscription';
 import { sendPushToUser } from '../services/push.service';
 
-const router = Router();
+const router: Router = Router();
 router.use(authMiddleware);
 
 router.post(

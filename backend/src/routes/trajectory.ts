@@ -3,7 +3,7 @@ import { param, validationResult } from 'express-validator';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { Trajectory } from '../models/Trajectory';
 
-const router = Router();
+const router: Router = Router();
 router.use(authMiddleware);
 
 router.get('/', async (req: AuthRequest, res: Response) => {
