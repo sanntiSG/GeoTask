@@ -37,5 +37,5 @@ jobs:
         # --max-time 60 → espera hasta 60s (necesario para el primer cold-start real)
         run: |
           echo "Pinging backend at $(date -u)"
-          curl -fsS --max-time 60 https://geotask-backend.onrender.com/health
+          curl -fsS --max-time 60 https://geotask-jxqn.onrender.com/health
           echo "Response OK"
